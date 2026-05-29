@@ -1,0 +1,27 @@
+{
+  "source": {
+    "id": "infoleg",
+    "name": "InfoLEG",
+    "sourceUrl": "https://www.argentina.gob.ar/normativa",
+    "retrievedAt": "2026-05-29T00:00:00.000Z",
+    "official": true
+  },
+  "document": {
+    "id": "ar-law-example-001",
+    "type": "LAW",
+    "title": "Norma argentina de ejemplo",
+    "status": "DESCONOCIDO",
+    "jurisdiction": {
+      "country": "AR",
+      "level": "NATIONAL"
+    },
+    "summaryPlainLanguage": "Item legal de ejemplo para validar el pipeline de ingesta.",
+    "articles": [
+      {
+        "label": "Articulo 1",
+        "text": "Texto de ejemplo del articulo 1."
+      }
+    ]
+  }
+}
+

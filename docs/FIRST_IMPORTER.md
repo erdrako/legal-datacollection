@@ -48,3 +48,25 @@ data/
 
 La carpeta `candidate` debe contener datos listos para ser enviados a `legal-datavalidation`.
 
+## CLI inicial
+
+El repositorio incluye una CLI minima para generar un candidate bundle desde un documento fuente de ejemplo:
+
+```bash
+npm run build:example
+```
+
+El comando lee:
+
+```text
+examples/source-document.example.json
+```
+
+y escribe:
+
+```text
+data/candidate/candidate-bundle.example.generated.json
+```
+
+Esta CLI no descarga fuentes reales todavia. Sirve como primer esqueleto funcional para fijar el formato de salida antes de implementar el importador oficial.
+

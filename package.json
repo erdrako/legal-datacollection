@@ -1,0 +1,12 @@
+{
+  "name": "@lexmapa/datacollection",
+  "version": "0.1.0",
+  "description": "Ingesta, parsing y normalizacion candidate de fuentes legales argentinas para LexMapa.",
+  "type": "module",
+  "private": false,
+  "scripts": {
+    "build:example": "node scripts/build-candidate.mjs --input examples/source-document.example.json --output data/candidate/candidate-bundle.example.generated.json",
+    "check": "npm run build:example"
+  }
+}
+
