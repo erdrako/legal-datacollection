@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+data/raw/
+data/parsed/
+data/candidate/
+*.log
+
