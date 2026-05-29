@@ -43,8 +43,8 @@ fuente oficial
 - [Arquitectura](./docs/ARCHITECTURE.md)
 - [Primer importador](./docs/FIRST_IMPORTER.md)
 - [Zonas de datos](./docs/DATA_ZONES.md)
+- [Integracion con contratos](./docs/CONTRACT_INTEGRATION.md)
 
 ## Contratos
 
 La salida de este repositorio debe respetar los contratos definidos en `legal-contracts`.
-
