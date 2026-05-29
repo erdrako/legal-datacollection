@@ -7,6 +7,7 @@
   "scripts": {
     "build:example": "node scripts/build-candidate.mjs --input examples/source-document.example.json --output data/candidate/candidate-bundle.example.generated.json",
     "import:infoleg:ley24240": "node scripts/import-infoleg.mjs --url https://servicios.infoleg.gob.ar/infolegInternet/anexos/0-4999/638/texact.htm --id ar-law-24240 --title \"Ley 24.240 - Defensa del Consumidor\" --raw-output data/raw/infoleg-ley-24240.raw.html --report-output data/parsed/infoleg-ley-24240.report.json --output data/candidate/infoleg-ley-24240.candidate.json",
+    "import:dev:infoleg": "node scripts/import-dev-infoleg-sources.mjs --sources examples/dev-infoleg-sources.json --output-root data",
     "check": "npm run build:example"
   }
 }

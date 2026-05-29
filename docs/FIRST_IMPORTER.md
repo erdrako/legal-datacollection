@@ -116,3 +116,27 @@ npm run import:infoleg:ley24240
 ```
 
 Ese modo es solo para desarrollo local con bloqueo de certificados. No debe usarse como configuracion productiva.
+
+## Carga descartable de desarrollo
+
+Para cargar varias normas de desarrollo:
+
+```bash
+npm run import:dev:infoleg
+```
+
+Fuentes configuradas:
+
+```text
+examples/dev-infoleg-sources.json
+```
+
+Salidas descartables:
+
+```text
+data/raw/
+data/parsed/
+data/candidate/
+```
+
+Estas salidas no deben versionarse. Sirven para probar parsing, validacion, backend y frontend antes de limpiar datos de desarrollo.
