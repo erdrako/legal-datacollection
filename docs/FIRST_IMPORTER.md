@@ -70,3 +70,40 @@ data/candidate/candidate-bundle.example.generated.json
 
 Esta CLI no descarga fuentes reales todavia. Sirve como primer esqueleto funcional para fijar el formato de salida antes de implementar el importador oficial.
 
+## Importador InfoLEG inicial
+
+Tambien existe un importador inicial para el texto actualizado de Ley 24.240 en InfoLEG:
+
+```bash
+npm run import:infoleg:ley24240
+```
+
+Salida:
+
+```text
+data/candidate/infoleg-ley-24240.candidate.json
+```
+
+El importador:
+
+- Descarga HTML desde InfoLEG.
+- Convierte HTML a texto.
+- Segmenta articulos.
+- Genera `LegalItem`, `LegalProvision` y `LegalCitation` candidatos.
+
+Limitaciones actuales:
+
+- No valida vigencia.
+- No extrae relaciones modificatorias.
+- No extrae reglas semanticas.
+- No aprueba datos.
+- Usa parsing HTML inicial, pendiente de endurecer con casos reales.
+
+Si la maquina local tiene problemas de certificados contra el sitio de InfoLEG, puede ejecutarse temporalmente:
+
+```powershell
+$env:LEXMAPA_ALLOW_INSECURE_TLS='1'
+npm run import:infoleg:ley24240
+```
+
+Ese modo es solo para desarrollo local con bloqueo de certificados. No debe usarse como configuracion productiva.
