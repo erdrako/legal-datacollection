@@ -84,11 +84,20 @@ Salida:
 data/candidate/infoleg-ley-24240.candidate.json
 ```
 
+Tambien genera:
+
+```text
+data/raw/infoleg-ley-24240.raw.html
+data/parsed/infoleg-ley-24240.report.json
+```
+
 El importador:
 
 - Descarga HTML desde InfoLEG.
+- Guarda una copia raw del HTML.
 - Convierte HTML a texto.
 - Segmenta articulos.
+- Genera un reporte de parsing con cantidad de articulos, hashes, duplicados y advertencias.
 - Genera `LegalItem`, `LegalProvision` y `LegalCitation` candidatos.
 
 Limitaciones actuales:

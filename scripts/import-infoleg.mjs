@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
@@ -20,7 +21,9 @@ if (!response.ok) {
   fail(`InfoLEG returned HTTP ${response.status}`);
 }
 
-const html = decodeHtmlResponse(Buffer.from(await response.arrayBuffer()), response.headers.get("content-type"));
+const htmlBuffer = Buffer.from(await response.arrayBuffer());
+const contentType = response.headers.get("content-type");
+const html = decodeHtmlResponse(htmlBuffer, contentType);
 const plainText = htmlToText(html);
 const articles = extractArticles(plainText);
 
@@ -35,12 +38,31 @@ const candidateBundle = buildCandidateBundle({
   retrievedAt,
   articles
 });
+const parsingReport = buildParsingReport({
+  id: args.id,
+  title: args.title,
+  url: args.url,
+  retrievedAt,
+  contentType,
+  htmlBuffer,
+  plainText,
+  articles
+});
 
-mkdirSync(dirname(resolve(args.output)), { recursive: true });
-writeFileSync(resolve(args.output), `${JSON.stringify(candidateBundle, null, 2)}\n`, "utf8");
+if (args["raw-output"]) {
+  writeTextFile(args["raw-output"], html);
+}
+
+if (args["report-output"]) {
+  writeTextFile(args["report-output"], `${JSON.stringify(parsingReport, null, 2)}\n`);
+}
+
+writeTextFile(args.output, `${JSON.stringify(candidateBundle, null, 2)}\n`);
 
 console.log(`Fetched InfoLEG source: ${args.url}`);
 console.log(`Detected articles: ${articles.length}`);
+if (args["raw-output"]) console.log(`Wrote raw HTML: ${args["raw-output"]}`);
+if (args["report-output"]) console.log(`Wrote parsing report: ${args["report-output"]}`);
 console.log(`Wrote candidate bundle: ${args.output}`);
 
 function parseArgs(argv) {
@@ -139,6 +161,8 @@ function extractArticles(text) {
     const heading = normalizeText(match[1]);
     const body = normalizeText(match[3]);
     const articleNumber = match[2];
+    const suffix = articleSuffixFromHeading(heading);
+    const articleKey = suffix ? `${articleNumber}-${suffix}` : articleNumber;
     const textOriginal = normalizeText(`${heading}\n${body}`);
 
     if (textOriginal.length < heading.length + 5) {
@@ -147,7 +171,8 @@ function extractArticles(text) {
 
     articles.push({
       article: articleNumber,
-      label: `Articulo ${articleNumber}`,
+      articleKey,
+      label: suffix ? `Articulo ${articleNumber} ${suffix}` : `Articulo ${articleNumber}`,
       heading,
       textOriginal
     });
@@ -156,12 +181,22 @@ function extractArticles(text) {
   return dedupeArticles(articles);
 }
 
+function articleSuffixFromHeading(heading) {
+  const suffixMatch = heading.match(/\b(bis|ter|quater|qu\u00e1ter)\b/i);
+
+  if (!suffixMatch) {
+    return undefined;
+  }
+
+  return suffixMatch[1].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 function dedupeArticles(articles) {
   const seen = new Set();
   const result = [];
 
   for (const article of articles) {
-    const key = `${article.article}:${article.textOriginal.slice(0, 120)}`;
+    const key = `${article.articleKey}:${article.textOriginal.slice(0, 120)}`;
 
     if (!seen.has(key)) {
       seen.add(key);
@@ -195,7 +230,7 @@ function buildCandidateBundle({ id, title, url, retrievedAt, articles }) {
   };
 
   const provisions = articles.map((article, index) => ({
-    id: `${id}-art-${article.article}-${index + 1}`,
+    id: `${id}-art-${article.articleKey}-${index + 1}`,
     legalItemId: id,
     type: "ARTICLE",
     label: article.label,
@@ -226,6 +261,98 @@ function buildCandidateBundle({ id, title, url, retrievedAt, articles }) {
     concepts: [],
     snapshots: []
   };
+}
+
+function buildParsingReport({ id, title, url, retrievedAt, contentType, htmlBuffer, plainText, articles }) {
+  const countsByArticleKey = countBy(articles.map((article) => article.articleKey));
+  const duplicateArticleKeys = Object.entries(countsByArticleKey)
+    .filter(([, count]) => count > 1)
+    .map(([articleKey, count]) => ({ articleKey, count }));
+  const shortArticles = articles
+    .filter((article) => article.textOriginal.length < 120)
+    .map((article) => ({
+      articleKey: article.articleKey,
+      label: article.label,
+      textLength: article.textOriginal.length
+    }));
+  const articlesWithInfolegNotes = articles
+    .filter((article) => /\(articulo|\(nota infoleg|\(texto/i.test(article.textOriginal))
+    .map((article) => ({
+      articleKey: article.articleKey,
+      label: article.label
+    }));
+
+  return {
+    schemaVersion: "0.1.0",
+    generatedAt: retrievedAt,
+    source: {
+      id: "infoleg",
+      name: "InfoLEG",
+      sourceUrl: url,
+      retrievedAt,
+      official: true
+    },
+    legalItem: {
+      id,
+      title
+    },
+    html: {
+      contentType,
+      bytes: htmlBuffer.length,
+      sha256: createHash("sha256").update(htmlBuffer).digest("hex")
+    },
+    plainText: {
+      characters: plainText.length
+    },
+    parsing: {
+      articleCount: articles.length,
+      duplicateArticleKeys,
+      shortArticles,
+      articlesWithInfolegNotes,
+      warnings: buildWarnings({ duplicateArticleKeys, shortArticles })
+    },
+    articles: articles.map((article, index) => ({
+      order: index + 1,
+      article: article.article,
+      articleKey: article.articleKey,
+      label: article.label,
+      heading: article.heading,
+      textLength: article.textOriginal.length,
+      preview: article.textOriginal.slice(0, 180)
+    }))
+  };
+}
+
+function buildWarnings({ duplicateArticleKeys, shortArticles }) {
+  const warnings = [];
+
+  if (duplicateArticleKeys.length > 0) {
+    warnings.push({
+      code: "DUPLICATE_ARTICLE_KEYS",
+      message: "Se detectaron claves de articulo repetidas; requieren revision manual."
+    });
+  }
+
+  if (shortArticles.length > 0) {
+    warnings.push({
+      code: "SHORT_ARTICLES",
+      message: "Se detectaron articulos con texto muy corto; pueden ser encabezados o parsing incompleto."
+    });
+  }
+
+  return warnings;
+}
+
+function countBy(values) {
+  return values.reduce((counts, value) => {
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function writeTextFile(path, text) {
+  mkdirSync(dirname(resolve(path)), { recursive: true });
+  writeFileSync(resolve(path), text, "utf8");
 }
 
 function normalizeText(value) {
